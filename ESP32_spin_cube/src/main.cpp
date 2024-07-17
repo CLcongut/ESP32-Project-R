@@ -121,7 +121,14 @@ void setup(void)
 {
   Serial.begin(115200);
 
-  xTaskCreatePinnedToCore(adxlTask, "adxlTask", 4096, NULL, 5, NULL, 0);
+  xTaskCreatePinnedToCore(
+    adxlTask, 
+    "adxlTask", 
+    4096, 
+    NULL,
+    5, 
+    NULL, 
+    0);
 
   accel.begin();
 

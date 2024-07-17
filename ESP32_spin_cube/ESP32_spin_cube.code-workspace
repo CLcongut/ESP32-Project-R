@@ -1,13 +1,12 @@
 {
-	"folders": [
-		{
-			"name": "esp32-test-I2S-inmp441",
-			"path": "../../ESP32-Function-R/esp32-test-I2S-inmp441"
-		}
-	],
-	"settings": {
-		"files.associations": {
-			"cmath": "cpp"
-		}
-	}
+    "folders": [
+        {
+            "path": "."
+        }
+    ],
+    "settings": {
+        "files.associations": {
+            "cmath": "cpp"
+        }
+    }
 }
