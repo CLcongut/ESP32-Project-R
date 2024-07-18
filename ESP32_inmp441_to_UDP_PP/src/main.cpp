@@ -88,7 +88,7 @@ void UDPTask(void *param)
       for (all_byte = 0; all_byte < bytes_read_cnt_0 / 4; all_byte++)
       {
         // udp.write(sample_inventory_0[all_byte]);
-        udp.printf("%x", sample_inventory_0);
+        udp.printf("%ld", sample_inventory_0[all_byte]);
       }
       vTaskDelay(2);
       udp.endPacket();
@@ -102,7 +102,7 @@ void UDPTask(void *param)
       for (all_byte = 0; all_byte < bytes_read_cnt_1 / 4; all_byte++)
       {
         // udp.write(sample_inventory_0[all_byte]);
-        udp.printf("%x", sample_inventory_1);
+        udp.printf("%ld", sample_inventory_1[all_byte]);
       }
       vTaskDelay(2);
       udp.endPacket();
