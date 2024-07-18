@@ -2,10 +2,10 @@
 #include <driver/i2s.h>
 #include <WIFI.h>
 
-// #define wifi_SSID "CCongut"
-// #define wifi_PSWD "88888888"
-#define wifi_SSID "CLcongut"
+#define wifi_SSID "CCongut"
 #define wifi_PSWD "88888888"
+// #define wifi_SSID "CLcongut"
+// #define wifi_PSWD "88888888"
 
 #define SAMPLE_BUFFER_SIZE 4000
 #define SAMPLE_RATE 40000
@@ -18,12 +18,13 @@
 #define sign_LED 2
 
 static TaskHandle_t xUDPTrasn = NULL;
+static bool restart_flag = false;
 
 hw_timer_t *tim0_once = NULL;
 
 WiFiUDP udp;
-// IPAddress remote_IP(192, 168, 31, 199);
-IPAddress remote_IP(192, 168, 22, 172);
+IPAddress remote_IP(192, 168, 31, 199);
+// IPAddress remote_IP(192, 168, 22, 172);
 uint32_t remoteUdpPort = 6060;
 
 uint32_t *data_inventory;
@@ -37,7 +38,7 @@ i2s_config_t i2s_config = {
     .channel_format = I2S_CHANNEL_FMT_ONLY_RIGHT,
     // I2S_COMM_FORMAT_I2S is deprecated, instead of I2S_COMM_FORMAT_STAND_I2S
     .communication_format = I2S_COMM_FORMAT_STAND_I2S,
-    .intr_alloc_flags = 0,
+    .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
     .dma_buf_count = 16,
     .dma_buf_len = 64,
     .use_apll = false};
@@ -52,6 +53,7 @@ int32_t raw_samples[SAMPLE_BUFFER_SIZE];
 
 void Tim0Interrupt()
 {
+  restart_flag = true;
 }
 
 void UDPTask(void *param)
@@ -71,7 +73,7 @@ void UDPTask(void *param)
     if (ulTaskNotifyTake(pdTRUE, portMAX_DELAY) == pdTRUE)
     // if (xTaskNotifyWait(0x00, 0x00, NULL, portMAX_DELAY) == pdTRUE)
     {
-      
+
       Serial.printf("UDP Transmit Start:%d\r\n", millis());
 #if 0
       for (uint32_t i = 0; i < 4380; i++)
@@ -91,54 +93,16 @@ void UDPTask(void *param)
         udp.write((uint8_t)data_transmit_inventory[i]);
       }
 #endif
-#if 0
-      for (uint32_t i = 0; i < 1460; i++)
-      {
-        udp.write((uint8_t)data_transmit_inventory[i]);
-      }
-      vTaskDelay(2);
-      for (uint32_t i = 1460; i < 2920; i++)
-      {
-        udp.write((uint8_t)data_transmit_inventory[i]);
-      }
-      vTaskDelay(2);
-      for (uint32_t i = 2920; i < 4380; i++)
-      {
-        udp.write((uint8_t)data_transmit_inventory[i]);
-      }
-      vTaskDelay(2);
-      for (uint32_t i = 4380; i < 5840; i++)
-      {
-        udp.write((uint8_t)data_transmit_inventory[i]);
-      }
-      vTaskDelay(2);
-      for (uint32_t i = 5840; i < 7300; i++)
-      {
-        udp.write((uint8_t)data_transmit_inventory[i]);
-      }
-      vTaskDelay(2);
-      for (uint32_t i = 7300; i < 8760; i++)
-      {
-        udp.write((uint8_t)data_transmit_inventory[i]);
-      }
-      vTaskDelay(2);
-      for (uint32_t i = 8760; i < 10220; i++)
-      {
-        udp.write((uint8_t)data_transmit_inventory[i]);
-      }
-      vTaskDelay(2);
-      for (uint32_t i = 10220; i < 11680; i++)
-      {
-        udp.write((uint8_t)data_transmit_inventory[i]);
-      }
-      vTaskDelay(2);
-      for (uint32_t i = 11680; i < 12000; i++)
+#if 1
+      udp.beginPacket(remote_IP, remoteUdpPort);
+      for (uint32_t i = 0; i < 12000; i++)
       {
         udp.write((uint8_t)data_transmit_inventory[i]);
       }
       vTaskDelay(2);
       udp.endPacket();
 #endif
+#if 0
       static uint32_t package_num;
       static uint32_t package_byte;
       for (package_num = 0; package_num < (SAMPLE_BUFFER_SIZE * 3) / UDP_PACKAGE_SIZE; package_num++)
@@ -154,6 +118,7 @@ void UDPTask(void *param)
         vTaskDelay(1);
         // Serial.printf("UDP Package %d Sent!\r\n", package_num);
       }
+#endif
       Serial.printf("UDP Transmit END:%d\r\n", millis());
     }
     vTaskDelay(5);
@@ -164,9 +129,9 @@ void setup()
 {
   pinMode(sign_LED, OUTPUT);
   Serial.begin(115200);
-  tim0_once = timerBegin(0, 80, true);
+  tim0_once = timerBegin(0, 240, true); // 定时器分频根据主频更改
   timerAttachInterrupt(tim0_once, Tim0Interrupt, true);
-  timerAlarmWrite(tim0_once, 100000, false);
+  timerAlarmWrite(tim0_once, 100000, true); // 定时器单次或者循环
 
   xTaskCreatePinnedToCore(
       UDPTask,
@@ -182,7 +147,7 @@ void setup()
 
   // data_inventory = (uint32_t *)calloc(sample_memory_size, sizeof(uint32_t));
   data_transmit_inventory = (uint8_t *)calloc(sample_memory_size * 3, sizeof(uint8_t));
-
+  timerAlarmEnable(tim0_once);
 #if 0
   for (uint32_t i = 0; i < samples_read; i++)
   {
@@ -255,10 +220,8 @@ void setup()
 
 void loop()
 {
-  static bool restart_flag = false;
-  // timerAlarmEnable(tim0_once);
   // vTaskDelay(1000);
-  if (!restart_flag)
+  if ( touchRead(32) < 20)
   {
     size_t bytes_read = 0;
 
@@ -277,19 +240,26 @@ void loop()
   }
 #endif
 #if 1
-    for (uint32_t i = 0; i < samples_read * 3; i += 3)
+    for (uint32_t i = 0; i < samples_read; i++)
     {
-      data_transmit_inventory[i] = (uint8_t)(raw_samples[i] >> 24);
-      data_transmit_inventory[i + 1] = (uint8_t)(raw_samples[i] >> 16);
-      data_transmit_inventory[i + 2] = (uint8_t)(raw_samples[i] >> 8);
+      data_transmit_inventory[i * 3] = (uint8_t)(raw_samples[i] >> 24);
+      data_transmit_inventory[i * 3 + 1] = (uint8_t)(raw_samples[i] >> 16);
+      data_transmit_inventory[i * 3 + 2] = (uint8_t)(raw_samples[i] >> 8);
     }
-    i2s_stop(I2S_NUM_0);
+    // i2s_stop(I2S_NUM_0);
 
     Serial.printf("Sound Data Process End:%d\r\n", millis());
 
     xTaskNotifyGive(xUDPTrasn);
     // // xTaskNotify(xUDPTrasn, 0, eNoAction);
-    restart_flag = true;
+    restart_flag = false;
+
+#endif
+#if 0
+    for (uint32_t i = 0; i < samples_read * 3; i++)
+    {
+      Serial.printf("%ld\n", raw_samples[i] >> 8);
+    }
 
 #endif
   }
