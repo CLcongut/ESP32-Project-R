@@ -226,7 +226,7 @@ void setup()
 void loop()
 {
   // vTaskDelay(1000);
-  if (restart_flag)
+  if (restart_flag && touchRead(32) < 20)
   {
     size_t bytes_read = 0;
 

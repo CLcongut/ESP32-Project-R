@@ -1,0 +1,6 @@
+x:19E09 y: 2560-hex-A00
+x:19E0C y:y2839040-hex-2B5200
+
+
+x:6CAB9 y:2560-hex-A00
+x:6CABC y:281D00

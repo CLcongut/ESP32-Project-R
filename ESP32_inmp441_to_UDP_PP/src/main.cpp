@@ -92,7 +92,7 @@ void UDPTask(void *param)
       }
       vTaskDelay(2);
       udp.endPacket();
-      Serial.printf("UDP Transmit END in 0:%d\r\n", millis());
+      Serial.printf("UDP Transmit   END in 0:%d\r\n", millis());
     }
     if (ulNotificationValue & 0x02)
     {
@@ -106,7 +106,7 @@ void UDPTask(void *param)
       }
       vTaskDelay(2);
       udp.endPacket();
-      Serial.printf("UDP Transmit END in 1:%d\r\n", millis());
+      Serial.printf("UDP Transmit   END in 1:%d\r\n", millis());
     }
   }
   vTaskDelay(5);
@@ -147,16 +147,16 @@ void loop()
 
     i2s_read(I2S_NUM_0, sample_inventory_0, sizeof(int32_t) * SAMPLE_BUFFER_SIZE, &bytes_read_cnt_0, portMAX_DELAY);
 
-    Serial.printf("I2S Collect End in 0:%d\r\n", millis());
+    Serial.printf("I2S Collect   End in 0:%d\r\n", millis());
 
-    xTaskNotify(xUDPTrasn, 0x01, eSetValueWithOverwrite);
+    // xTaskNotify(xUDPTrasn, 0x01, eSetValueWithOverwrite);
 
     Serial.printf("I2S Collect Start in 1:%d\r\n", millis());
 
     i2s_read(I2S_NUM_0, sample_inventory_1, sizeof(int32_t) * SAMPLE_BUFFER_SIZE, &bytes_read_cnt_1, portMAX_DELAY);
 
-    Serial.printf("I2S Collect End in 1:%d\r\n", millis());
+    Serial.printf("I2S Collect   End in 1:%d\r\n", millis());
 
-    xTaskNotify(xUDPTrasn, 0x02, eSetValueWithOverwrite);
+    // xTaskNotify(xUDPTrasn, 0x02, eSetValueWithOverwrite);
   }
 }
