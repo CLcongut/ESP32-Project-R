@@ -9,8 +9,8 @@
 
 #define SAMPLE_BUFFER_SIZE 4000
 #define SAMPLE_RATE 40000
-#define I2S_MIC_SERIAL_CLOCK GPIO_NUM_17
-#define I2S_MIC_LEFT_RIGHT_CLOCK GPIO_NUM_21
+#define I2S_MIC_SERIAL_CLOCK GPIO_NUM_27
+#define I2S_MIC_LEFT_RIGHT_CLOCK GPIO_NUM_26
 #define I2S_MIC_SERIAL_DATA GPIO_NUM_4
 
 #define UDP_PACKAGE_SIZE 1000
@@ -27,16 +27,11 @@ IPAddress remote_IP(192, 168, 31, 199);
 // IPAddress remote_IP(192, 168, 22, 172);
 uint32_t remoteUdpPort = 6060;
 
-// uint32_t *data_inventory;
-uint8_t *data_transmit_inventory;
-const uint16_t sample_memory_size = 4000;
-
 i2s_config_t i2s_config = {
     .mode = (i2s_mode_t)(I2S_MODE_MASTER | I2S_MODE_RX),
     .sample_rate = SAMPLE_RATE,
     .bits_per_sample = I2S_BITS_PER_SAMPLE_32BIT,
-    .channel_format = I2S_CHANNEL_FMT_ONLY_RIGHT,
-    // I2S_COMM_FORMAT_I2S is deprecated, instead of I2S_COMM_FORMAT_STAND_I2S
+    .channel_format = I2S_CHANNEL_FMT_RIGHT_LEFT,
     .communication_format = I2S_COMM_FORMAT_STAND_I2S,
     .intr_alloc_flags = ESP_INTR_FLAG_LEVEL1,
     .dma_buf_count = 32,
@@ -49,7 +44,6 @@ i2s_pin_config_t i2s_mic_pins = {
     .data_out_num = I2S_PIN_NO_CHANGE,
     .data_in_num = I2S_MIC_SERIAL_DATA};
 
-// int32_t raw_samples[SAMPLE_BUFFER_SIZE];
 int32_t *raw_samples;
 
 void Tim0Interrupt()
@@ -60,7 +54,7 @@ void Tim0Interrupt()
 void UDPTask(void *param)
 {
   WiFi.mode(WIFI_STA);
-  WiFi.setSleep(false); // 关闭STA模式下wifi休眠，提高响应速度
+  WiFi.setSleep(false);
   WiFi.begin(wifi_SSID, wifi_PSWD);
   while (WiFi.status() != WL_CONNECTED)
   {
@@ -72,7 +66,6 @@ void UDPTask(void *param)
   for (;;)
   {
     if (ulTaskNotifyTake(pdTRUE, portMAX_DELAY) == pdTRUE)
-    // if (xTaskNotifyWait(0x00, 0x00, NULL, portMAX_DELAY) == pdTRUE)
     {
 
       Serial.printf("UDP Transmit Start:%d\r\n", millis());
@@ -98,9 +91,9 @@ void setup()
 {
   pinMode(sign_LED, OUTPUT);
   Serial.begin(115200);
-  tim0_once = timerBegin(0, 240, true); // 定时器分频根据主频更改
+  tim0_once = timerBegin(0, 240, true);
   timerAttachInterrupt(tim0_once, Tim0Interrupt, true);
-  timerAlarmWrite(tim0_once, 100000, false); // 定时器单次或者循环
+  timerAlarmWrite(tim0_once, 100000, false);
 
   xTaskCreatePinnedToCore(
       UDPTask,
@@ -114,19 +107,14 @@ void setup()
   i2s_driver_install(I2S_NUM_0, &i2s_config, 0, NULL);
   i2s_set_pin(I2S_NUM_0, &i2s_mic_pins);
 
-  // data_inventory = (uint32_t *)calloc(sample_memory_size, sizeof(uint32_t));
   raw_samples = (int32_t *)calloc(SAMPLE_BUFFER_SIZE, sizeof(int32_t));
-
-  // data_transmit_inventory = (uint8_t *)calloc(sample_memory_size * 3, sizeof(uint8_t));
 
   delay(1000);
   timerAlarmEnable(tim0_once);
-
 }
 
 void loop()
 {
-  // vTaskDelay(1000);
   if (restart_flag && touchRead(32) < 20)
   {
     size_t bytes_read = 0;
@@ -137,24 +125,8 @@ void loop()
 
     Serial.printf("I2S Collect End:%d\r\n", millis());
 
-    // uint32_t samples_read = bytes_read / sizeof(int32_t);
-    // Serial.printf("Sound Data Process Start:%d\r\n", millis());
-#if 1
-    // for (uint32_t i = 0; i < samples_read; i++)
-    // {
-    //   data_transmit_inventory[i * 3] = (uint8_t)(raw_samples[i] >> 24);
-    //   data_transmit_inventory[i * 3 + 1] = (uint8_t)(raw_samples[i] >> 16);
-    //   data_transmit_inventory[i * 3 + 2] = (uint8_t)(raw_samples[i] >> 8);
-    // }
-    // i2s_stop(I2S_NUM_0);
-    // free(data_transmit_inventory);
-    // Serial.printf("Sound Data Process End:%d\r\n", millis());
-
     xTaskNotifyGive(xUDPTrasn);
-    // // xTaskNotify(xUDPTrasn, 0, eNoAction);
-    // restart_flag = false;
 
-#endif
 #if 0
     for (uint32_t i = 0; i < samples_read * 3; i++)
     {
