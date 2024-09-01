@@ -10,9 +10,9 @@
 #define I2S0_SAMPLE_BUFFER_SIZE 8000
 #define I2S1_SAMPLE_BUFFER_SIZE 4000
 #define SAMPLE_RATE 40000
-#define I2S_MIC_SERIAL_CLOCK GPIO_NUM_27
-#define I2S_MIC_LEFT_RIGHT_CLOCK GPIO_NUM_26
-#define I2S_MIC_SERIAL_DATA GPIO_NUM_4
+// #define I2S_MIC_SERIAL_CLOCK GPIO_NUM_27
+// #define I2S_MIC_LEFT_RIGHT_CLOCK GPIO_NUM_26
+// #define I2S_MIC_SERIAL_DATA GPIO_NUM_4
 
 #define UDP_PACKAGE_SIZE 1000
 
@@ -43,10 +43,10 @@ void I2S_0_Init()
   };
 
   i2s_pin_config_t i2s_mic_pins_0 = {
-      .bck_io_num = I2S_MIC_SERIAL_CLOCK,
-      .ws_io_num = I2S_MIC_LEFT_RIGHT_CLOCK,
+      .bck_io_num = GPIO_NUM_27,
+      .ws_io_num = GPIO_NUM_26,
       .data_out_num = I2S_PIN_NO_CHANGE,
-      .data_in_num = I2S_MIC_SERIAL_DATA,
+      .data_in_num = GPIO_NUM_4,
   };
 
   if (i2s_driver_install(I2S_NUM_0, &i2s_config_0, 0, NULL) == ESP_OK)
@@ -71,10 +71,10 @@ void I2S_1_Init()
   };
 
   i2s_pin_config_t i2s_mic_pins_1 = {
-      .bck_io_num = 16,
-      .ws_io_num = 17,
+      .bck_io_num = GPIO_NUM_16,
+      .ws_io_num = GPIO_NUM_17,
       .data_out_num = I2S_PIN_NO_CHANGE,
-      .data_in_num = 5,
+      .data_in_num = GPIO_NUM_5,
   };
   if (i2s_driver_install(I2S_NUM_1, &i2s_config_1, 0, NULL) == ESP_OK)
   {
@@ -115,7 +115,7 @@ void UDPTask(void *param)
     {
       ulTaskNotifyValueClear(xUDPTrasn, 0xFFFF);
       Serial.printf("UDP  Transmit Start:%d\r\n", millis());
-      
+
       udp.beginPacket(remote_IP, remoteUdpPort);
       for (uint32_t i = 0; i < I2S0_SAMPLE_BUFFER_SIZE; i++)
       {
@@ -124,11 +124,11 @@ void UDPTask(void *param)
         udp.write(samples_inventory_0[i] >> 8);
         udp.write(samples_inventory_0[i]);
       }
-      vTaskDelay(2);
+      // vTaskDelay(2);
       udp.endPacket();
-
-      vTaskDelay(2);
-      udp.beginPacket(remote_IP, remoteUdpPort);
+      Serial.printf("UDP  Transmit END 1:%d\r\n", millis());
+      // vTaskDelay(2);
+      // udp.beginPacket(remote_IP, remoteUdpPort);
       for (uint32_t i = 0; i < I2S1_SAMPLE_BUFFER_SIZE; i++)
       {
         udp.write(samples_inventory_1[i] >> 24);
@@ -136,10 +136,10 @@ void UDPTask(void *param)
         udp.write(samples_inventory_1[i] >> 8);
         udp.write(samples_inventory_1[i]);
       }
-      vTaskDelay(2);
+      // vTaskDelay(2);
       udp.endPacket();
 
-      Serial.printf("UDP  Transmit   END:%d\r\n", millis());
+      Serial.printf("UDP  Transmit END 2:%d\r\n", millis());
     }
     vTaskDelay(5);
   }
