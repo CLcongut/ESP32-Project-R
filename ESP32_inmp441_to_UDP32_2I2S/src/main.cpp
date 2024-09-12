@@ -50,7 +50,7 @@ void I2S_0_Init()
       .bck_io_num = GPIO_NUM_27,
       .ws_io_num = GPIO_NUM_26,
       .data_out_num = I2S_PIN_NO_CHANGE,
-      .data_in_num = GPIO_NUM_4,
+      .data_in_num = GPIO_NUM_25,
   };
 
   if (i2s_driver_install(I2S_NUM_0, &i2s_config_0, 0, NULL) == ESP_OK)
@@ -75,10 +75,10 @@ void I2S_1_Init()
   };
 
   i2s_pin_config_t i2s_mic_pins_1 = {
-      .bck_io_num = GPIO_NUM_16,
-      .ws_io_num = GPIO_NUM_17,
+      .bck_io_num = GPIO_NUM_33,
+      .ws_io_num = GPIO_NUM_32,
       .data_out_num = I2S_PIN_NO_CHANGE,
-      .data_in_num = GPIO_NUM_5,
+      .data_in_num = GPIO_NUM_35,
   };
   if (i2s_driver_install(I2S_NUM_1, &i2s_config_1, 0, NULL) == ESP_OK)
   {
@@ -127,10 +127,11 @@ void UDPTask(void *param)
 
       for (uint32_t i = 0; i < 12000; i++)
       {
-        samples_inventory_1[i * 3] = samples_inventory_0[i] >> 16;
-        samples_inventory_1[i * 3 + 1] = samples_inventory_0[i] >> 8;
-        samples_inventory_1[i * 3 + 2] = samples_inventory_0[i];
+        samples_inventory_1[i * 3] = samples_inventory_0[i] >> 24;
+        samples_inventory_1[i * 3 + 1] = samples_inventory_0[i] >> 16;
+        samples_inventory_1[i * 3 + 2] = samples_inventory_0[i] >> 8;
       }
+      // samples_inventory_1 = (uint8_t *)samples_inventory_0;
       udp.beginPacket(remote_IP, remoteUdpPort);
 #if 0
       for (uint32_t i = 0; i < 8000; i++)
@@ -161,7 +162,7 @@ void UDPTask(void *param)
       } while (!sent);
 #endif
 #if 1
-      udp.write(samples_inventory_1, 13140); // 22500,26280:it was stable,18000:ez to calculate half the rate
+      udp.write(samples_inventory_1, 26280); // 22500,26280:it was stable,18000:ez to calculate half the rate,17520:12 times of 1460
       // udp.write(&samples_inventory_1[12000], 12000);
       // udp.write(&samples_inventory_1[24000], 12000);
 #endif
