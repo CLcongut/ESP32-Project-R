@@ -1,5 +1,7 @@
 #include "serial_cmd.h"
 
+Preferences cmdprefer;
+
 SerialCmd::SerialCmd()
     : c_cmdIndexAry{{"/setRate", 1},
                     {"/setWiFi", 2},
@@ -7,7 +9,7 @@ SerialCmd::SerialCmd()
                     {"/help", 4},
                     {"/close", 5}} {}
 
-SerialCmd::~SerialCmd() {}
+SerialCmd::~SerialCmd() { cmdprefer.~Preferences(); }
 
 uint8_t SerialCmd::findIndex(char *cmd) {
   for (size_t i = 0; i < CMD_CONFIG; i++) {
@@ -16,6 +18,17 @@ uint8_t SerialCmd::findIndex(char *cmd) {
     }
   }
   return 0;
+}
+
+void SerialCmd::begin() {
+    cmdprefer.begin("Configs");
+    _configValue.gapTime = cmdprefer.getUChar("GapTime");
+    _configValue.runTime = cmdprefer.getUChar("RunTime");
+    strcpy(_configValue.ssid, cmdprefer.getString("SSID").c_str());
+    strcpy(_configValue.pswd, cmdprefer.getString("PSWD").c_str());
+    strcpy(_configValue.ipv4, cmdprefer.getString("IPV4").c_str());
+    _configValue.port = cmdprefer.getUShort("Port");
+    cmdprefer.end();
 }
 
 size_t SerialCmd::cmdScanf() {
@@ -54,7 +67,9 @@ size_t SerialCmd::cmdScanf() {
                 return 0;
                 break;
               default:
-                log_e("Invalid Command!\r\n" HELPTIP "\r\n");
+                log_e(
+                    "Invalid Command!\r\n -> Enter \"/help\" For More "
+                    "Info\r\n");
                 break;
             }
           }
@@ -108,10 +123,14 @@ void SerialCmd::cmdSetRate(char *gaptime, char *runtime) {
     Serial.println(_configValue.gapTime);
     Serial.print(" -> Set RunTime: ");
     Serial.println(_configValue.runTime);
-    Serial.println();
+    Serial.println(" ...");
   }
 
-  // To do : add preference save
+  cmdprefer.begin("Configs");
+  cmdprefer.putUChar("GapTime", _configValue.gapTime);
+  cmdprefer.putUChar("RunTime", _configValue.runTime);
+  cmdprefer.end();
+  Serial.println(" -> Rate Config Saved!\r\n");
 }
 
 void SerialCmd::cmdSetWiFi(char *ssid, char *pswd) {
@@ -122,9 +141,13 @@ void SerialCmd::cmdSetWiFi(char *ssid, char *pswd) {
   Serial.println(_configValue.ssid);
   Serial.print(" -> Set WiFi Password: ");
   Serial.println(_configValue.pswd);
-  Serial.println();
-  // To do : add preference save
-  // may need transform to String
+  Serial.println(" ...");
+
+  cmdprefer.begin("Configs");
+  cmdprefer.putString("SSID", String(_configValue.ssid));
+  cmdprefer.putString("PSWD", String(_configValue.pswd));
+  cmdprefer.end();
+  Serial.println(" -> WiFi Config Saved!\r\n");
 }
 
 void SerialCmd::cmdSetUDP(char *ipv4, char *port) {
@@ -170,8 +193,33 @@ void SerialCmd::cmdSetUDP(char *ipv4, char *port) {
   Serial.println(_configValue.ipv4);
   Serial.print(" -> Set Target Port: ");
   Serial.println(_configValue.port);
-  Serial.println();
-  // To do : add preference save
+  Serial.println(" ...");
+
+  cmdprefer.begin("Configs");
+  cmdprefer.putString("IPV4", String(_configValue.ipv4));
+  cmdprefer.putUShort("Port", _configValue.port);
+  cmdprefer.end();
+  Serial.println(" -> UDP Config Saved!\r\n");
+}
+
+ConfigValue SerialCmd::cmdGetConfig(bool ifPrintInfo) {
+  ConfigValue t_cfv = _configValue;
+  if (ifPrintInfo) {
+    Serial.println(" -> Your Configs Are: ");
+    Serial.print(" -> GapTime: ");
+    Serial.println(t_cfv.gapTime);
+    Serial.print(" -> RunTime: ");
+    Serial.println(t_cfv.runTime);
+    Serial.print(" -> WiFi SSID: ");
+    Serial.println(t_cfv.ssid);
+    Serial.print(" -> WiFi Password: ");
+    Serial.println(t_cfv.pswd);
+    Serial.print(" -> Target IP: ");
+    Serial.println(t_cfv.ipv4);
+    Serial.print(" -> Target Port: ");
+    Serial.println(t_cfv.port);
+  }
+  return t_cfv;
 }
 
 #ifdef ARCHIVE
